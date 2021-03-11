@@ -1,29 +1,43 @@
-There is the **mutation-listener.js** file missing in the [**selenium-webdriver@4.0.0-alpha.8** package](https://www.npmjs.com/package/selenium-webdriver) published to NPM.
+# Bug in selenium-webdriver@4.0.0-beta.1
 
-Trying to listen to DOM mutations fails with the following error:
-```
-Error: ENOENT: no such file or directory, open '../../cdp-support/mutation-listener.js'
-    at Object.openSync (node:fs:487:3)
-    at Object.readFileSync (node:fs:388:35)
-    at Driver.logMutationEvents (/Users/marcus.noll/Documents/git/selenium-webdriver-bug/node_modules/selenium-webdriver/chromium.js:888:33)
-    at processTicksAndRejections (node:internal/process/task_queues:93:5)
-    at async example (/Users/marcus.noll/Documents/git/selenium-webdriver-bug/index.js:7:9) {
-  errno: -2,
-  syscall: 'open',
-  code: 'ENOENT',
-  path: '../../cdp-support/mutation-listener.js'
-}
+https://github.com/SeleniumHQ/selenium/issues/9264
+
+`logMutationEvents` does not work for me in the JavaScript bindings. The defined
+callback is never executed. When looking into the browser console of the controlled Chrome instance, the
+following error is logged:
 
 ```
+Uncaught ReferenceError: __webdriver_attribute is not defined
+```
 
-## To reproduce
+This does not seem to be caught by the tests, because the [test's assertions are
+located in the callback](https://github.com/SeleniumHQ/selenium/blob/4464ac4f8230150824f6bf2e4075cd1f53a648c7/javascript/node/selenium-webdriver/test/devtools_test.js#L89-L91) that is never executed.
 
-I just stripped down [the test code for `logMutationEvents`](https://github.com/SeleniumHQ/selenium/blob/07cd99c6811d13f4906f941c1d6936fcd5999baa/javascript/node/selenium-webdriver/test/chrome/devtools_test.js#L120-L135) and changed it to work with the published NPM package.
+
+## To Reproduce
+
+Detailed steps to reproduce the behavior:
+Execute the self-contained script mentioned below. Apart from executing
+`logMutationEvents`, it also prints the browser console logs.
+
+## Expected behavior
+
+As the DOM of the page is being mutated during the script, the callback passed
+to `logMutationEvents` should be executed.
+
+## Test script or set of commands reproducing this issue
+
+This repo just adapts [the test code for `logMutationEvents`](https://github.com/SeleniumHQ/selenium/blob/4464ac4f8230150824f6bf2e4075cd1f53a648c7/javascript/node/selenium-webdriver/test/devtools_test.js#L85-L101).
 
 Run it with:
 1. `npm install`
 2. `npm start`
 
-## Expected behavior
+## Environment
 
-**mutation-listener.js** is contained in the NPM package and it's therefore possible to use `logMutationEvents` without error
+- OS: macOS
+- Browser: Chrome
+- Browser version: 89.0.4389.82
+- Browser Driver version: 89.0.4389.23
+- Language Bindings version: JavaScript 4.0.0-beta.1
+- Selenium Grid version (if applicable): --
